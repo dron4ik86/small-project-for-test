@@ -1,0 +1,17 @@
+name: Trigger Allure Workflow
+
+on:
+  push:
+    branches: [ main ]
+
+jobs:
+  trigger:
+    runs-on: ubuntu-latest
+    steps:
+      - name: Trigger workflow in allure-with-behave
+        run: |
+          curl -X POST \
+          -H "Authorization: token ${{ secrets.PAT_TOKEN }}" \
+          -H "Accept: application/vnd.github.v3+json" \
+          https://api.github.com/repos/dron4ik86/allure-with-behave/dispatches \
+          -d '{"event_type":"test-repo-push","client_payload":{"ref":"${{ github.ref }}","sha":"${{ github.sha }}"}}'
