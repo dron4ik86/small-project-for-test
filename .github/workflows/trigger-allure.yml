@@ -3,15 +3,45 @@ name: Trigger Allure Workflow
 on:
   push:
     branches: [ main ]
+  workflow_dispatch:
+    inputs:
+      behave_tags:
+        description: 'Behave tags (e.g., @some_api_service)'
+        required: false
+        type: string
+      behave_env:
+        description: 'Environment (e.g., prod, dev, test)'
+        required: false
+        type: string
+        default: 'test'
+      behave_extra_args:
+        description: 'Additional Behave arguments'
+        required: false
+        type: string
 
 jobs:
   trigger:
     runs-on: ubuntu-latest
     steps:
+      - uses: actions/checkout@v4
       - name: Trigger workflow in allure-with-behave
         run: |
+          # Use inputs from workflow_dispatch if available, otherwise use defaults or empty
+          BEHAVE_TAGS="${{ github.event.inputs.behave_tags || 'post_tests' }}"
+          BEHAVE_ENV="${{ github.event.inputs.behave_env || '' }}"
+          BEHAVE_EXTRA_ARGS="${{ github.event.inputs.behave_extra_args || ''}}"
+          
           curl -X POST \
           -H "Authorization: token ${{ secrets.PAT_TOKEN }}" \
           -H "Accept: application/vnd.github.v3+json" \
           https://api.github.com/repos/dron4ik86/allure-with-behave/dispatches \
-          -d '{"event_type":"test-repo-push","client_payload":{"ref":"${{ github.ref }}","sha":"${{ github.sha }}"}}'
+          -d '{
+            "event_type":"test-repo-push",
+            "client_payload":{
+              "ref":"${{ github.ref }}",
+              "sha":"${{ github.sha }}",
+              "behave_tags":"'"$BEHAVE_TAGS"'",
+              "behave_env":"'"$BEHAVE_ENV"'",
+              "behave_extra_args":"'"$BEHAVE_EXTRA_ARGS"'"
+            }
+          }'
